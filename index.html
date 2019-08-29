@@ -9,6 +9,15 @@
       <script src='https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.js'></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <style>
+      form{
+        border: solid 1px black;
+        display: flex;
+        flex-direction: column;
+        padding: 1rem
+      }
+      form input, button{
+        margin: 1rem
+      }
     </style>
   </head>
   <body>
@@ -22,26 +31,26 @@
 
     const API = 'https://acme-users-api-rev.herokuapp.com/api';
 
-const fetchUser = async ()=> {
-  const storage = window.localStorage;
-  const userId = storage.getItem('userId');
-  if(userId){
-    try {
-      return (await axios.get(`${API}/users/detail/${userId}`)).data;
-    }
-    catch(ex){
-      storage.removeItem('userId');
-      return fetchUser();
-    }
-  }
-  const user = (await axios.get(`${API}/users/random`)).data;
-  storage.setItem('userId', user.id);
-  return  user;
-};
+    const fetchUser = async ()=> {
+      const storage = window.localStorage;
+      const userId = storage.getItem('userId');
+      if(userId){
+        try {
+          return (await axios.get(`${API}/users/detail/${userId}`)).data;
+        }
+        catch(ex){
+          storage.removeItem('userId');
+          return fetchUser();
+        }
+      }
+      const user = (await axios.get(`${API}/users/random`)).data;
+      storage.setItem('userId', user.id);
+      return  user;
+    };
 
       class Vacation extends Component{
-        constructor(){
-          super();
+        constructor(props){
+          super(props);
           this.state={
             startDate: '',
             endDate: ''
@@ -51,6 +60,7 @@ const fetchUser = async ()=> {
         }
         start(){
           this.props.onStart(this.state.startDate)
+          console.log(this.state.startDate, this.state.endDate)
         }
         end(){
           this.props.onStart(this.state.endDate)
@@ -58,13 +68,15 @@ const fetchUser = async ()=> {
         render(){
           const {startDate, endDate} = this.state;
           const {start, end} = this
+
           return (
             <div>
-            <form onSubmit={ev => ev.preventDefault()}>
-              <input value={startDate} name='start' onChange={ev => this.setState({startDate: ev.target.value})}/>
-              <input value={endDate} name='end' onChange={ev => this.setState({endDate: ev.target.value})}/>
-              <button disabled={!startDate && !endDate} onClick={startDate && endDate}>Create Vacation</button>
-            </form>
+
+              <form onSubmit={ev => ev.preventDefault()}>
+                <input value={startDate} name='start' onChange={ev => this.setState({startDate: ev.target.value})}/>
+                <input value={endDate} name='end' onChange={ev => this.setState({endDate: ev.target.value})}/>
+                <button disabled={!startDate && !endDate} onClick={()=> {start() && end()}}>Create Vacation</button>
+              </form>
             </div>
           )
         }
@@ -77,17 +89,30 @@ const fetchUser = async ()=> {
             user: {},
             vacation: []
           }
+          this.onStart = this.onStart.bind(this)
         }
         async componentDidMount(){
-          const user = fetchUser();
-          const vacation = (await axios.get(`${API}/users/id/vacation`)).data;
+          const user = await fetchUser();
+          const vacation = (await axios.get(`${API}/users/${user.id}/vacations`)).data;
           this.setState({user, vacation})
+        }
+        async onStart(startDate, endDate){
+          const payload = {
+            startate: startDate,
+            endDate: endDate
+          }
+          console.log(payload)
+          const vacationDate = (await axios.post(`${API}/users/${this.state.user.id}/vacations`, payload )).data
+          this.setState({ vacation:[...this.state.vacation, vacationDate]})
         }
         render(){
           const {vacation, user} = this.state;
+          // console.log(user)
+          // console.log(vacation)
           return (
             <HashRouter>
-            <Route path='/data' render={(props)=> <Vacation {...props} user={user} vacation={vacation} />}/>
+              <h1>Acme Vacation Planner for {user.fullName}</h1>
+              <Route path='/' render={(props)=> <Vacation {...props} user={user} onStart={this.onStart} vacation={vacation} />}/>
             </HashRouter>
           )
         }
