@@ -57,12 +57,15 @@ const fetchUser = async ()=> {
         }
         render(){
           const {startDate, endDate} = this.state;
+          const {start, end} = this
           return (
+            <div>
             <form onSubmit={ev => ev.preventDefault()}>
               <input value={startDate} name='start' onChange={ev => this.setState({startDate: ev.target.value})}/>
               <input value={endDate} name='end' onChange={ev => this.setState({endDate: ev.target.value})}/>
               <button disabled={!startDate && !endDate} onClick={startDate && endDate}>Create Vacation</button>
             </form>
+            </div>
           )
         }
       }
@@ -84,7 +87,7 @@ const fetchUser = async ()=> {
           const {vacation, user} = this.state;
           return (
             <HashRouter>
-            <Route id='/data' render={(props)=> <Vacation {...props} user={user} vacation={vacation} />}/>
+            <Route path='/data' render={(props)=> <Vacation {...props} user={user} vacation={vacation} />}/>
             </HashRouter>
           )
         }
