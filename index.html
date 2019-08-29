@@ -19,6 +19,77 @@
       const { Route, HashRouter, Link, Redirect, Switch } = ReactRouterDOM;
       const root = document.querySelector('#root');
 
+
+    const API = 'https://acme-users-api-rev.herokuapp.com/api';
+
+const fetchUser = async ()=> {
+  const storage = window.localStorage;
+  const userId = storage.getItem('userId');
+  if(userId){
+    try {
+      return (await axios.get(`${API}/users/detail/${userId}`)).data;
+    }
+    catch(ex){
+      storage.removeItem('userId');
+      return fetchUser();
+    }
+  }
+  const user = (await axios.get(`${API}/users/random`)).data;
+  storage.setItem('userId', user.id);
+  return  user;
+};
+
+      class Vacation extends Component{
+        constructor(){
+          super();
+          this.state={
+            startDate: '',
+            endDate: ''
+          }
+          this.start = this.start.bind(this);
+          this.end = this.end.bind(this);
+        }
+        start(){
+          this.props.onStart(this.state.startDate)
+        }
+        end(){
+          this.props.onStart(this.state.endDate)
+        }
+        render(){
+          const {startDate, endDate} = this.state;
+          return (
+            <form onSubmit={ev => ev.preventDefault()}>
+              <input value={startDate} name='start' onChange={ev => this.setState({startDate: ev.target.value})}/>
+              <input value={endDate} name='end' onChange={ev => this.setState({endDate: ev.target.value})}/>
+              <button disabled={!startDate && !endDate} onClick={startDate && endDate}>Create Vacation</button>
+            </form>
+          )
+        }
+      }
+
+      class App extends Component{
+        constructor(){
+          super();
+          this.state={
+            user: {},
+            vacation: []
+          }
+        }
+        async componentDidMount(){
+          const user = fetchUser();
+          const vacation = (await axios.get(`${API}/users/id/vacation`)).data;
+          this.setState({user, vacation})
+        }
+        render(){
+          const {vacation, user} = this.state;
+          return (
+            <HashRouter>
+            <Route id='/data' render={(props)=> <Vacation {...props} user={user} vacation={vacation} />}/>
+            </HashRouter>
+          )
+        }
+      }
+
       render(<App />, root);
     </script>
   </body>
